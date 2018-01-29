@@ -12,7 +12,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-m", "--model", help="model", default="siamese")
 parser.add_argument("-res", "--restrict", type=int, help="size of supervised seed", default=0)
 parser.add_argument("-tr", "--training", help="training method of hybrid network", default="joint")
-parser.add_argument("-ra", "--ratio", type=int, help="balance successive training", default=0)
+parser.add_argument("-ra", "--ratio", type=int, help="balance successive training", default=1)
 parser.add_argument("-ep", "--epochs", type=int, help="number of epochs", default=10)
 parser.add_argument("-es", "--early_stopping", type=int, help="number of epochs without improvement max", default=3)
 parser.add_argument("-bs", "--batch_size", type=int, help="batch size", default=64)
@@ -141,6 +141,6 @@ if __name__ == "__main__":
         model.build()
 
         if not config.task == "mixed":
-            model.train(train_data, dev_data, test_data, restrict=config.restrict, task=config.task)
+            model.train(train_data, dev_data, test_data, restrict=config.restrict, task=config.task, ratio=config.ratio)
         else:
             model.train_mixed(train_data, dev_data, test_data, restrict=config.restrict, ratio=config.ratio)
