@@ -402,7 +402,7 @@ class HybridNet(object):
 
                 if task == "joint":
                     print("Unsupervised training of autoencoder")
-                    for _ in ratio:
+                    for _ in range(ratio):
                         dev_acc_ae = self.run_epoch_ae(sess, train_data, dev_data, test_data, epoch, lr)
                     print("Supervised training of inference")
                     dev_acc = self.run_epoch_inf(sess, train_data, dev_data, test_data, epoch, lr, restrict=restrict)
