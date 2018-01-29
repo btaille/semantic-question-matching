@@ -3,11 +3,16 @@ import argparse
 import os
 
 from model import SiameseNet
+from hybrid import HybridNet
 from data_utils import QuoraDataset
 from embeddings import load_embeddings
 
 # Argument Parser
 parser = argparse.ArgumentParser()
+parser.add_argument("-m", "--model", help="model", default="siamese")
+parser.add_argument("-res", "--restrict", type=int, help="size of supervised seed", default=0)
+parser.add_argument("-tr", "--training", help="training method of hybrid network", default="joint")
+parser.add_argument("-ra", "--ratio", type=int, help="balance successive training", default=0)
 parser.add_argument("-ep", "--epochs", type=int, help="number of epochs", default=10)
 parser.add_argument("-es", "--early_stopping", type=int, help="number of epochs without improvement max", default=3)
 parser.add_argument("-bs", "--batch_size", type=int, help="batch size", default=64)
@@ -32,6 +37,11 @@ class Config():
         if not os.path.exists(self.model_path):
             os.makedirs(self.model_path)
 
+    # model
+    model_name = args.model
+    restrict = args.restrict
+    ratio = args.ratio
+
     # embeddings
     we_dim = args.w2v_dim
     glove_filename = "word_embeddings/glove.6B/glove.6B.{}d_w2vformat.txt".format(we_dim)
@@ -44,11 +54,9 @@ class Config():
     dev_save = "data/dev.pkl"
     test_save = "data/test.pkl"
 
-    # vocab
-    # TODO saving and quick reloading of dicts and formatted embeddings ???
-
     # training
     train_embeddings = args.train_emb
+    task = args.training
     n_epochs = args.epochs
     dropout = args.dropout
     batch_size = args.batch_size
@@ -70,15 +78,32 @@ class Config():
     assert lr_method in ["adam", "sgd"]
     assert fc_activation in ["relu", "tanh", "sigmoid"]
     assert feats in ["raw", "dist", "all"]
+    assert model_name in ["siamese", "hybrid"]
 
-    conf_dir = "hid-{}_feats-{}_lr-{}-{}-{}_bs-{}_drop-{}_bn-{}_emb-{}/".format(hidden_size, feats, lr_method, lr,
-                                                                                fc_activation, batch_size, dropout,
-                                                                                int(batch_norm),
-                                                                                int(train_embeddings))
+    if model_name == "siamese":
+        conf_dir = "{}-hid-{}_feats-{}_lr-{}-{}-{}_bs-{}_drop-{}_bn-{}_emb-{}".format(model_name, hidden_size,
+                                                                                      feats,
+                                                                                      lr_method, lr,
+                                                                                      fc_activation, batch_size,
+                                                                                      dropout,
+                                                                                      batch_norm,
+                                                                                      train_embeddings)
+
+    elif model_name == "hybrid":
+        conf_dir = "{}-hid-{}_feats-{}_lr-{}-{}-{}_bs-{}_drop-{}_bn-{}_emb-{}_res-{}_tr-{}/".format(model_name,
+                                                                                                    hidden_size,
+                                                                                                    feats,
+                                                                                                    lr_method, lr,
+                                                                                                    fc_activation,
+                                                                                                    batch_size,
+                                                                                                    dropout,
+                                                                                                    batch_norm,
+                                                                                                    train_embeddings,
+                                                                                                    restrict, task)
 
     # general config
     output_path = "results/" + conf_dir
-    model_path = output_path + "model/"
+    model_path = output_path + "model/model.ckpt"
     log_path = output_path + "logs/"
 
 
@@ -106,7 +131,16 @@ if __name__ == "__main__":
     test_data = qd_test.data()
 
     ### SiameseNet
-    model = SiameseNet(config, embeddings)
-    model.build()
+    if config.model_name == "siamese":
+        model = SiameseNet(config, embeddings)
+        model.build()
+        model.train(train_data, dev_data, test_data)
 
-    model.train(train_data, dev_data, test_data)
+    elif config.model_name == "hybrid":
+        model = HybridNet(config, embeddings)
+        model.build()
+
+        if not config.task == "mixed":
+            model.train(train_data, dev_data, test_data, restrict=config.restrict, task=config.task)
+        else:
+            model.train_mixed(train_data, dev_data, test_data, restrict=config.restrict, ratio=config.ratio)
