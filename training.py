@@ -11,11 +11,11 @@ from embeddings import load_embeddings
 parser = argparse.ArgumentParser()
 parser.add_argument("-m", "--model", help="model", default="siamese")
 parser.add_argument("-res", "--restrict", type=int, help="size of supervised seed", default=0)
-parser.add_argument("-tr", "--training", help="training method of hybrid network", default="joint")
+parser.add_argument("-tr", "--training", help="training method of hybrid network", default="successive")
 parser.add_argument("-ra", "--ratio", type=int, help="balance successive training", default=1)
 parser.add_argument("-ep", "--epochs", type=int, help="number of epochs", default=10)
 parser.add_argument("-es", "--early_stopping", type=int, help="number of epochs without improvement max", default=3)
-parser.add_argument("-bs", "--batch_size", type=int, help="batch size", default=64)
+parser.add_argument("-bs", "--batch_size", type=int, help="batch size", default=32)
 parser.add_argument("-lr", "--learning_rate", type=float, help="learning rate", default=1e-3)
 parser.add_argument("-lrd", "--lr_decay", type=float, help="learning rate decay", default=0.9)
 parser.add_argument("-opt", "--optimizer", help="optimizer", default="adam")
@@ -67,6 +67,7 @@ class Config():
     lr = args.learning_rate
     lr_decay = args.lr_decay
     nepochs_no_improv = args.early_stopping
+    test_step = 10000
 
     lr_divide = 1
     reload = False
@@ -79,6 +80,7 @@ class Config():
     assert fc_activation in ["relu", "tanh", "sigmoid"]
     assert feats in ["raw", "dist", "all"]
     assert model_name in ["siamese", "hybrid"]
+    assert task in ["autoencoder", "inference", "joint", "successive"]
 
     if model_name == "siamese":
         conf_dir = "{}-hid-{}_feats-{}_lr-{}-{}-{}_bs-{}_drop-{}_bn-{}_emb-{}".format(model_name, hidden_size,
@@ -130,7 +132,7 @@ if __name__ == "__main__":
     dev_data = qd_dev.data()
     test_data = qd_test.data()
 
-    ### SiameseNet
+    ### Neural Net
     if config.model_name == "siamese":
         model = SiameseNet(config, embeddings)
         model.build()
@@ -140,7 +142,12 @@ if __name__ == "__main__":
         model = HybridNet(config, embeddings)
         model.build()
 
-        if not config.task == "mixed":
+        if config.task in ["autoencoder", "inference"]:
             model.train(train_data, dev_data, test_data, restrict=config.restrict, task=config.task, ratio=config.ratio)
-        else:
+        elif config.task == "successive":
+            model.train(train_data, dev_data, test_data, restrict=config.restrict, task="autoencoder",
+                        ratio=config.ratio)
+            model.train(train_data, dev_data, test_data, restrict=config.restrict, task="inference",
+                        ratio=config.ratio)
+        elif config.task == "joint":
             model.train_mixed(train_data, dev_data, test_data, restrict=config.restrict, ratio=config.ratio)
