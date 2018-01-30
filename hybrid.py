@@ -405,7 +405,8 @@ class HybridNet(object):
                     for _ in range(ratio):
                         dev_acc_ae = self.run_epoch_ae(sess, train_data, dev_data, test_data, epoch, lr)
                     print("Supervised training of inference")
-                    dev_acc = self.run_epoch_inf(sess, train_data, dev_data, test_data, epoch, lr, restrict=restrict)
+                    dev_acc = self.run_epoch_inf(sess, train_data, dev_data, test_data, epoch, lr,
+                                                 test_step=self.config.test_step, restrict=restrict)
 
                 elif task == "autoencoder":
                     print("Unsupervised training of autoencoder")
@@ -413,7 +414,8 @@ class HybridNet(object):
 
                 elif task == "inference":
                     print("Supervised training of inference")
-                    dev_acc = self.run_epoch_inf(sess, train_data, dev_data, test_data, epoch, lr, restrict=restrict)
+                    dev_acc = self.run_epoch_inf(sess, train_data, dev_data, test_data, epoch, lr,
+                                                 test_step=self.config.test_step, restrict=restrict)
 
                 lr *= self.config.lr_decay
 
@@ -431,7 +433,6 @@ class HybridNet(object):
                     if nepoch_no_improv >= self.config.nepochs_no_improv:
                         print("Early stopping after {} epochs without improvements".format(nepoch_no_improv))
                         break
-
 
     def train_mixed(self, train_data, dev_data, test_data, restrict=0, ratio=1):
 
@@ -452,7 +453,8 @@ class HybridNet(object):
                 print("Epoch {}/{} :".format(epoch + 1, self.config.n_epochs))
                 print("Joint training of inference and autoencoder")
                 dev_acc_inf, dev_acc_ae = self.run_epoch_mixed(sess, train_data, dev_data, test_data, epoch, lr,
-                                                               restrict=restrict, ratio=ratio)
+                                                               restrict=restrict, ratio=ratio,
+                                                               test_step=self.config.test_step)
 
                 lr *= self.config.lr_decay
 

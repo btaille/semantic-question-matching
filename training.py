@@ -20,7 +20,7 @@ parser.add_argument("-lr", "--learning_rate", type=float, help="learning rate", 
 parser.add_argument("-lrd", "--lr_decay", type=float, help="learning rate decay", default=0.9)
 parser.add_argument("-opt", "--optimizer", help="optimizer", default="adam")
 parser.add_argument("-bn", "--batch_norm", type=int, help="batch norm", default=1)
-parser.add_argument("-f", "--feats", help="features", default="all")
+parser.add_argument("-f", "--feats", help="features", default="dist")
 parser.add_argument("-hid", "--hidden", type=int, help="dimension of lstm hidden layer", default=256)
 parser.add_argument("-w2v", "--w2v_dim", type=int, help="dimension of pretrained word embeddings", default=300)
 parser.add_argument("-d", "--dropout", type=float, help="dropout", default=0.)

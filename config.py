@@ -26,7 +26,7 @@ class Config():
     train_embeddings = False
     n_epochs = 10
     dropout = 0.
-    batch_size = 16
+    batch_size = 32
     batch_norm = True
     lr_method = "adam"
     fc_activation = "relu"
@@ -36,6 +36,8 @@ class Config():
     lr_divide = 1
     reload = False
     nepochs_no_improv = 3
+
+    test_step = 6000
 
     # hyperparameters
     padlen = 40
