@@ -57,8 +57,11 @@ class HybridNet(object):
         self.y = tf.placeholder_with_default(tf.zeros([self.config.batch_size], tf.int64), shape=[None],
                                              name="is_duplicate")
 
-        self.q_ae = tf.placeholder_with_default(tf.zeros([self.config.batch_size, self.config.padlen], tf.int64),
-                                                shape=[None, None], name="questionAE")
+        self.q_ae_input = tf.placeholder_with_default(tf.zeros([self.config.batch_size, self.config.padlen], tf.int64),
+                                                      shape=[None, None], name="questionAE")
+
+        self.q_ae_label = tf.placeholder_with_default(tf.zeros([self.config.batch_size, self.config.padlen], tf.int64),
+                                                      shape=[None, None], name="questionAE")
         self.l_ae = tf.placeholder_with_default(tf.zeros([self.config.batch_size], tf.int64), shape=[None],
                                                 name="lenAE")
 
@@ -78,7 +81,7 @@ class HybridNet(object):
                                            trainable=self.config.train_embeddings)
             we1 = tf.nn.embedding_lookup(_word_embeddings, self.q1, name="q1_embedded")
             we2 = tf.nn.embedding_lookup(_word_embeddings, self.q2, name="q2_embedded")
-            we_ae = tf.nn.embedding_lookup(_word_embeddings, self.q_ae, name="q_ae_embedded")
+            we_ae = tf.nn.embedding_lookup(_word_embeddings, self.q_ae_input, name="q_ae_embedded")
 
             we1 = tf.nn.dropout(we1, keep_prob=1 - self.dropout)
             we2 = tf.nn.dropout(we2, keep_prob=1 - self.dropout)
@@ -106,14 +109,14 @@ class HybridNet(object):
 
         ### Loss
         losses_mask = tf.sequence_mask(lengths=self.l_ae, maxlen=self.config.padlen, dtype=tf.float32)
-        losses = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=self.q_ae, logits=self.logits)
+        losses = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=self.q_ae_label, logits=self.logits)
 
         self.cross_entropy_ae = tf.reduce_sum(losses * losses_mask) / tf.reduce_sum(losses_mask)
 
         self.train_step_ae = optimizer.minimize(self.cross_entropy_ae)
 
         ### Evaluation
-        correct_prediction_ae = tf.equal(tf.argmax(self.logits, axis=-1), self.q_ae)
+        correct_prediction_ae = tf.equal(tf.argmax(self.logits, axis=-1), self.q_ae_label)
 
         self.accuracy_ae = tf.reduce_sum(tf.cast(correct_prediction_ae, tf.float32) * losses_mask) / tf.reduce_sum(
             losses_mask)
@@ -297,14 +300,14 @@ class HybridNet(object):
 
         return dev_acc
 
-    def run_evaluate_ae(self, sess, data):
+    def run_evaluate_ae(self, sess, data, corrupt=lambda x: x):
         iterator = DataIteratorAE(data, self.config.batch_size, strict=1)
         nbatches = (iterator.max + self.config.batch_size - 1) // self.config.batch_size
 
         accuracy, cross = 0, 0
         for i in range(nbatches):
             q, l = iterator.__next__()
-            fd = {self.q_ae: q, self.l_ae: l, self.dropout: 0, self.lr: 0}
+            fd = {self.q_ae_input: corrupt(q), self.q_ae_label: q, self.l_ae: l, self.dropout: 0, self.lr: 0}
             acc, ce = sess.run([self.accuracy_ae, self.cross_entropy_ae], feed_dict=fd)
 
             accuracy += acc * len(q)
@@ -317,7 +320,8 @@ class HybridNet(object):
 
         return summary, accuracy
 
-    def run_epoch_mixed(self, sess, train, dev, test, epoch, lr, test_step=1000, restrict=0, ratio=1):
+    def run_epoch_mixed(self, sess, train, dev, test, epoch, lr, test_step=1000, restrict=0, ratio=1,
+                        corrupt=lambda x: x):
         inf_iterator = DataIterator(train, self.config.batch_size, strict=1, restrict=restrict, ratio=ratio)
         ae_iterator = DataIteratorAE(train, self.config.batch_size, strict=1)
 
@@ -349,7 +353,8 @@ class HybridNet(object):
 
             elif task == "ae":
                 q, l = ae_iterator.__next__()
-                fd = {self.q_ae: q, self.l_ae: l, self.dropout: self.config.dropout, self.lr: lr}
+                fd = {self.q_ae_input: corrupt(q), self.q_ae_label: q, self.l_ae: l, self.dropout: self.config.dropout,
+                      self.lr: lr}
                 _, summary = sess.run([self.train_step_ae, self.merged_ae], feed_dict=fd)
 
                 i_ae += 1
@@ -381,7 +386,7 @@ class HybridNet(object):
 
         return dev_acc_inf, dev_acc_ae
 
-    def train(self, train_data, dev_data, test_data, restrict=0, task="joint", ratio=1):
+    def train(self, train_data, dev_data, test_data, restrict=0, task="joint", ratio=1, corrupt=lambda x: x):
         assert task in ["inference", "autoencoder", "joint"]
 
         best_acc = 0
@@ -403,14 +408,15 @@ class HybridNet(object):
                 if task == "joint":
                     print("Unsupervised training of autoencoder")
                     for _ in range(ratio):
-                        dev_acc_ae = self.run_epoch_ae(sess, train_data, dev_data, test_data, epoch, lr)
+                        dev_acc_ae = self.run_epoch_ae(sess, train_data, dev_data, test_data, epoch, lr,
+                                                       corrupt=corrupt)
                     print("Supervised training of inference")
                     dev_acc = self.run_epoch_inf(sess, train_data, dev_data, test_data, epoch, lr,
                                                  test_step=self.config.test_step, restrict=restrict)
 
                 elif task == "autoencoder":
                     print("Unsupervised training of autoencoder")
-                    dev_acc = self.run_epoch_ae(sess, train_data, dev_data, test_data, epoch, lr)
+                    dev_acc = self.run_epoch_ae(sess, train_data, dev_data, test_data, epoch, lr, corrupt=corrupt)
 
                 elif task == "inference":
                     print("Supervised training of inference")
@@ -434,7 +440,7 @@ class HybridNet(object):
                         print("Early stopping after {} epochs without improvements".format(nepoch_no_improv))
                         break
 
-    def train_mixed(self, train_data, dev_data, test_data, restrict=0, ratio=1):
+    def train_mixed(self, train_data, dev_data, test_data, restrict=0, ratio=1, corrupt=corrupt):
 
         best_acc = 0
         nepoch_no_improv = 0
@@ -454,7 +460,8 @@ class HybridNet(object):
                 print("Joint training of inference and autoencoder")
                 dev_acc_inf, dev_acc_ae = self.run_epoch_mixed(sess, train_data, dev_data, test_data, epoch, lr,
                                                                restrict=restrict, ratio=ratio,
-                                                               test_step=self.config.test_step)
+                                                               test_step=self.config.test_step,
+                                                               corrupt=corrupt)
 
                 lr *= self.config.lr_decay
 

@@ -49,6 +49,25 @@ def sequence_dict(tok_dict, w2idx):
     return seq_dict
 
 
+def corrupt_sequence(seq, p=0.1, d=3):
+    l = len(seq)
+    mask = np.greater(np.random.random(l), [p] * l).astype(int)
+    seq = mask * seq
+
+    return np.array(seq)[sorted(range(l), key=lambda i: i + d * np.random.random())]
+
+
+def corrupt_sequences(sequences, p=0.1, d=3):
+    corrupted = np.zeros(sequences.shape, int)
+
+    print(corrupted.shape)
+
+    for i, seq in enumerate(sequences):
+        corrupted[i] = corrupt_sequence(seq, p=p, d=d)
+
+    return corrupted
+
+
 class DataIterator(object):
     def __init__(self, data, batch=1, strict=0, restrict=0, ratio=1):
         self.q1, self.q2, self.l1, self.l2, self.y = data

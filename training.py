@@ -4,7 +4,7 @@ import os
 
 from model import SiameseNet
 from hybrid import HybridNet
-from data_utils import QuoraDataset
+from data_utils import QuoraDataset, corrupt_sequences
 from embeddings import load_embeddings
 
 # Argument Parser
@@ -27,6 +27,7 @@ parser.add_argument("-d", "--dropout", type=float, help="dropout", default=0.)
 parser.add_argument("-emb", "--train_emb", type=int, help="fine_tune word embeddings", default=0)
 parser.add_argument("-act", "--activation", help="activation function of FC layers", default="relu")
 parser.add_argument("-pad", "--padlen", type=int, help="padding length", default=40)
+parser.add_argument("-cor", "--corruption", type=int, help="use Denoising AE", default=1)
 
 args = parser.parse_args()
 
@@ -68,6 +69,7 @@ class Config():
     lr_decay = args.lr_decay
     nepochs_no_improv = args.early_stopping
     test_step = 10000
+    corruption = args.corruption
 
     lr_divide = 1
     reload = False
@@ -92,16 +94,17 @@ class Config():
                                                                                       train_embeddings)
 
     elif model_name == "hybrid":
-        conf_dir = "{}-hid-{}_feats-{}_lr-{}-{}-{}_bs-{}_drop-{}_bn-{}_emb-{}_res-{}_tr-{}/".format(model_name,
-                                                                                                    hidden_size,
-                                                                                                    feats,
-                                                                                                    lr_method, lr,
-                                                                                                    fc_activation,
-                                                                                                    batch_size,
-                                                                                                    dropout,
-                                                                                                    batch_norm,
-                                                                                                    train_embeddings,
-                                                                                                    restrict, task)
+        conf_dir = "{}-hid-{}_feats-{}_lr-{}-{}-{}_bs-{}_drop-{}_bn-{}_emb-{}_res-{}_tr-{}_corr/".format(model_name,
+                                                                                                         hidden_size,
+                                                                                                         feats,
+                                                                                                         lr_method, lr,
+                                                                                                         fc_activation,
+                                                                                                         batch_size,
+                                                                                                         dropout,
+                                                                                                         batch_norm,
+                                                                                                         train_embeddings,
+                                                                                                         restrict, task,
+                                                                                                         corruption)
 
     # general config
     output_path = "results/" + conf_dir
@@ -142,11 +145,18 @@ if __name__ == "__main__":
         model = HybridNet(config, embeddings)
         model.build()
 
+        if config.corruption:
+            corrupt = corrupt_sequences
+        else:
+            corrupt = lambda x: x
+
         if config.task in ["autoencoder", "inference"]:
-            model.train(train_data, dev_data, test_data, restrict=config.restrict, task=config.task, ratio=config.ratio)
+            model.train(train_data, dev_data, test_data, restrict=config.restrict, task=config.task, ratio=config.ratio,
+                        corrupt=corrupt)
+
         elif config.task == "successive":
             model.train(train_data, dev_data, test_data, restrict=config.restrict, task="autoencoder",
-                        ratio=config.ratio)
+                        ratio=config.ratio, corrupt=corrupt)
             model.train(train_data, dev_data, test_data, restrict=config.restrict, task="inference",
                         ratio=config.ratio)
         elif config.task == "joint":
