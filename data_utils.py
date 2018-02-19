@@ -60,8 +60,6 @@ def corrupt_sequence(seq, p=0.1, d=3):
 def corrupt_sequences(sequences, p=0.1, d=3):
     corrupted = np.zeros(sequences.shape, int)
 
-    print(corrupted.shape)
-
     for i, seq in enumerate(sequences):
         corrupted[i] = corrupt_sequence(seq, p=p, d=d)
 
