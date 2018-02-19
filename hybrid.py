@@ -273,7 +273,7 @@ class HybridNet(object):
 
         return summary, accuracy
 
-    def run_epoch_ae(self, sess, train, dev, test, epoch, lr, test_step=1000):
+    def run_epoch_ae(self, sess, train, dev, test, epoch, lr, test_step=1000, corrupt=lambda x: x):
         iterator = DataIteratorAE(train, self.config.batch_size, strict=1)
         nbatches = (iterator.max + self.config.batch_size - 1) // self.config.batch_size
         dev_acc = 0
@@ -281,7 +281,8 @@ class HybridNet(object):
         accuracy, cross = 0, 0
         for i in tqdm(range(nbatches)):
             q, l = iterator.__next__()
-            fd = {self.q_ae: q, self.l_ae: l, self.dropout: self.config.dropout, self.lr: lr}
+            fd = {self.q_ae_input: corrupt(q), self.q_ae_label: q, self.l_ae: l, self.dropout: self.config.dropout,
+                  self.lr: lr}
             _, summary = sess.run([self.train_step_ae, self.merged_ae], feed_dict=fd)
 
             # tensorboard
@@ -440,7 +441,7 @@ class HybridNet(object):
                         print("Early stopping after {} epochs without improvements".format(nepoch_no_improv))
                         break
 
-    def train_mixed(self, train_data, dev_data, test_data, restrict=0, ratio=1, corrupt=corrupt):
+    def train_mixed(self, train_data, dev_data, test_data, restrict=0, ratio=1, corrupt=lambda x: x):
 
         best_acc = 0
         nepoch_no_improv = 0
