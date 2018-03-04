@@ -1,5 +1,4 @@
 FROM nvidia/cuda:8.0-cudnn6-devel-ubuntu16.04
-MAINTAINER "Durgesh Mankekar"
 
 RUN apt-get update && apt-get install -y wget ca-certificates \
     git curl vim python3-dev python3-pip \
@@ -12,6 +11,7 @@ RUN pip3 install numpy pandas sklearn matplotlib seaborn jupyter
 RUN pip3 install jupyter-tensorboard tqdm
 RUN pip3 install keras nltk gensim
 RUN pip3 install h5py
+RUN pip3 install jupyterlab
 
 
 RUN ["mkdir", "notebooks"]

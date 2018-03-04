@@ -1,3 +1,3 @@
 #!/bin/sh
 
-jupyter notebook --allow-root "$@"
+jupyter lab --allow-root "$@"
