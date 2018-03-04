@@ -10,9 +10,8 @@ RUN pip3 install tensorflow-tensorboard
 RUN pip3 install numpy pandas sklearn matplotlib seaborn jupyter
 RUN pip3 install jupyter-tensorboard tqdm
 RUN pip3 install keras nltk gensim
-RUN pip3 install h5py
+RUN pip3 install h5py tqdm
 RUN pip3 install jupyterlab
-
 
 RUN ["mkdir", "notebooks"]
 COPY jupyter_notebook_config.py /root/.jupyter/
