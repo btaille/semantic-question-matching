@@ -1,12 +1,12 @@
+import os
+import pickle
+
 import numpy as np
 import pandas as pd
-import pickle
-import os
-
 from nltk import word_tokenize
 from nltk.stem import SnowballStemmer
 
-from embeddings import word_index, reverse_dict
+from src.embeddings import word_index, reverse_dict
 
 
 def check_str(s):

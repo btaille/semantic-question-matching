@@ -1,15 +1,17 @@
+import os
+
+import numpy as np
 import tensorflow as tf
 from tqdm import tqdm
-import numpy as np
-import os
-from data_utils import DataIterator, DataIteratorAE
+
+from src.data_utils import DataIterator, DataIteratorAE
 
 max_pool = tf.contrib.keras.layers.GlobalMaxPool1D()
 tf_config = tf.ConfigProto()
 tf_config.gpu_options.allow_growth = True
 
 
-class HybridNet(object):
+class Model(object):
     def __init__(self, config, embeddings):
         self.config = config
         self.embeddings = embeddings
@@ -57,13 +59,14 @@ class HybridNet(object):
         self.y = tf.placeholder_with_default(tf.zeros([self.config.batch_size], tf.int64), shape=[None],
                                              name="is_duplicate")
 
-        self.q_ae_input = tf.placeholder_with_default(tf.zeros([self.config.batch_size, self.config.padlen], tf.int64),
-                                                      shape=[None, None], name="questionAE")
+        if self.config.model_name == "hybrid":
+            self.q_ae_input = tf.placeholder_with_default(tf.zeros([self.config.batch_size, self.config.padlen], tf.int64),
+                                                          shape=[None, None], name="questionAE")
 
-        self.q_ae_label = tf.placeholder_with_default(tf.zeros([self.config.batch_size, self.config.padlen], tf.int64),
-                                                      shape=[None, None], name="questionAE")
-        self.l_ae = tf.placeholder_with_default(tf.zeros([self.config.batch_size], tf.int64), shape=[None],
-                                                name="lenAE")
+            self.q_ae_label = tf.placeholder_with_default(tf.zeros([self.config.batch_size, self.config.padlen], tf.int64),
+                                                          shape=[None, None], name="questionAE")
+            self.l_ae = tf.placeholder_with_default(tf.zeros([self.config.batch_size], tf.int64), shape=[None],
+                                                    name="lenAE")
 
         self.dropout = tf.placeholder(dtype=tf.float32, shape=[], name="dropout")
         self.lr = tf.placeholder(dtype=tf.float32, shape=[], name="lr")
@@ -430,7 +433,7 @@ class HybridNet(object):
                     nepoch_no_improv = 0
                     if not os.path.exists(self.config.model_path):
                         os.makedirs(self.config.model_path)
-                    self.saver.save(sess, self.config.model_path)
+                    self.saver.save(sess, self.config.model_path + "model.ckpt")
                     best_acc = dev_acc
                     print("New best score on dev !")
 
