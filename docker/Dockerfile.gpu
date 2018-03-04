@@ -5,7 +5,7 @@ RUN apt-get update && apt-get install -y wget ca-certificates \
     libfreetype6-dev libpng12-dev libgtk2.0-dev
 
 RUN pip3 install --upgrade pip
-RUN pip3 install tensorflow-gpu
+RUN pip3 install tensorflow-gpu==1.4
 RUN pip3 install tensorflow-tensorboard
 RUN pip3 install numpy pandas sklearn matplotlib seaborn jupyter
 RUN pip3 install jupyter-tensorboard tqdm
