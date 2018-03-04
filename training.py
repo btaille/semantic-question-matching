@@ -1,21 +1,22 @@
-import numpy as np
 import argparse
 import os
 
-from model import SiameseNet
-from hybrid import HybridNet
-from data_utils import QuoraDataset, corrupt_sequences
-from embeddings import load_embeddings
+import numpy as np
+from src.data_utils import QuoraDataset, corrupt_sequences
+from src.embeddings import load_embeddings, convert_glove
+
+from src.model import Model
 
 # Argument Parser
 parser = argparse.ArgumentParser()
 parser.add_argument("-m", "--model", help="model", default="siamese")
 parser.add_argument("-res", "--restrict", type=int, help="size of supervised seed", default=0)
 parser.add_argument("-tr", "--training", help="training method of hybrid network", default="successive")
-parser.add_argument("-ra", "--ratio", type=int, help="balance successive training", default=1)
+parser.add_argument("-ra", "--ratio", type=int, help="repetition of seed to balance joint training", default=1)
 parser.add_argument("-ep", "--epochs", type=int, help="number of epochs", default=10)
 parser.add_argument("-es", "--early_stopping", type=int, help="number of epochs without improvement max", default=3)
 parser.add_argument("-bs", "--batch_size", type=int, help="batch size", default=32)
+parser.add_argument("-ts", "--test_step", type=int, help="test step", default=1000)
 parser.add_argument("-lr", "--learning_rate", type=float, help="learning rate", default=1e-3)
 parser.add_argument("-lrd", "--lr_decay", type=float, help="learning rate decay", default=0.9)
 parser.add_argument("-opt", "--optimizer", help="optimizer", default="adam")
@@ -37,6 +38,9 @@ class Config():
         # directory for training outputs
         if not os.path.exists(self.model_path):
             os.makedirs(self.model_path)
+        if not os.path.exists(self.glove_filename):
+            for file in os.listdir(os.path.dirname(self.glove_filename)):
+                convert_glove(os.join(os.path.dirname(self.glove_filename), file))
 
     # model
     model_name = args.model
@@ -68,7 +72,7 @@ class Config():
     lr = args.learning_rate
     lr_decay = args.lr_decay
     nepochs_no_improv = args.early_stopping
-    test_step = 10000
+    test_step = args.test_step
     corruption = args.corruption
 
     lr_divide = 1
@@ -94,30 +98,32 @@ class Config():
                                                                                       train_embeddings)
 
     elif model_name == "hybrid":
-        conf_dir = "{}-hid-{}_feats-{}_lr-{}-{}-{}_bs-{}_drop-{}_bn-{}_emb-{}_res-{}_tr-{}_corr/".format(model_name,
-                                                                                                         hidden_size,
-                                                                                                         feats,
-                                                                                                         lr_method, lr,
-                                                                                                         fc_activation,
-                                                                                                         batch_size,
-                                                                                                         dropout,
-                                                                                                         batch_norm,
-                                                                                                         train_embeddings,
-                                                                                                         restrict, task,
-                                                                                                         corruption)
+        conf_dir = "{}-hid-{}_feats-{}_lr-{}-{}-{}_bs-{}_drop-{}_bn-{}_emb-{}_res-{}_tr-{}_corr-{}/".format(model_name,
+                                                                                                            hidden_size,
+                                                                                                            feats,
+                                                                                                            lr_method,
+                                                                                                            lr,
+                                                                                                            fc_activation,
+                                                                                                            batch_size,
+                                                                                                            dropout,
+                                                                                                            batch_norm,
+                                                                                                            train_embeddings,
+                                                                                                            restrict,
+                                                                                                            task,
+                                                                                                            corruption)
 
     # general config
     output_path = "results/" + conf_dir
-    model_path = output_path + "model/model.ckpt"
+    model_path = output_path + "model/"
     log_path = output_path + "logs/"
 
 
 if __name__ == "__main__":
-    ### Loading config and pretrained Glove embeddings
+    # Loading config and pretrained Glove embeddings
     config = Config()
     loaded_embeddings, (w2idx, idx2w) = load_embeddings(config.glove_filename, binary=False)
 
-    ### Loading Quora Datasets
+    # Loading Quora Dataset
     qd_train = QuoraDataset(config.train_filename, save_path=config.train_save)
     w2idx_train, idx2w_train = qd_train.w2idx, qd_train.idx2w
 
@@ -135,16 +141,14 @@ if __name__ == "__main__":
     dev_data = qd_dev.data()
     test_data = qd_test.data()
 
-    ### Neural Net
+    # Training Neural network
+    model = Model(config, embeddings)
+    model.build()
+
     if config.model_name == "siamese":
-        model = SiameseNet(config, embeddings)
-        model.build()
-        model.train(train_data, dev_data, test_data)
+        model.train(train_data, dev_data, test_data, task="inference")
 
     elif config.model_name == "hybrid":
-        model = HybridNet(config, embeddings)
-        model.build()
-
         if config.corruption:
             corrupt = corrupt_sequences
         else:
