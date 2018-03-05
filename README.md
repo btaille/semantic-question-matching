@@ -24,7 +24,7 @@ nvidia-docker run -it -p 8888:8888 -v <absolute_path>/:notebooks/ sqm
 ### Data
 ```bash
 cd data
-unzip data.zip -d
+unzip data.zip -d .
 ./get_glove.sh
 ``` 
 
