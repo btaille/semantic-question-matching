@@ -8,9 +8,10 @@ to tackle the semi-supervised setting (as in [3]).
 The code is written in Python 3 with the following dependencies:
 
 * Tensorflow (== 1.4)
+* numpy
+* pandas
 * NLTK
 * Gensim
-* tqdm
 
 ### Data
 The provided split is the standard partition from [4] in the original Quora format.
