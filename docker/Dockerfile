@@ -25,4 +25,3 @@ VOLUME /notebooks
 
 RUN chmod +x /run_jupyter.sh
 CMD ["/run_jupyter.sh"]
-
