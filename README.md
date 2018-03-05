@@ -13,9 +13,17 @@ The code is written in Python 3 with the following dependencies:
 * NLTK
 * Gensim
 
-### Data
-The provided split is the standard partition from [4] in the original Quora format.
+### Docker
+A Dockerfile with the environment and jupyterlab is provided in /docker.
+```bash
+cd docker
+nvidia-docker build -t sqm .
+nvidia-docker run -it -p 8888:8888 -v <absolute_path>/:notebooks/ sqm
+```
 
+### Data
+Unzip the content of data/data.zip into data/.  
+The provided split is the standard partition from [4] in the original Quora format.  
 **None of question id and pair id match the original release from Quora.**
 
 ### Download GloVe
