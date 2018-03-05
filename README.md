@@ -14,7 +14,7 @@ The code is written in Python 3 with the following dependencies:
 * Gensim
 
 ### Docker
-A Dockerfile with the environment and jupyterlab is provided in /docker.
+A Dockerfile with the corresponding GPU environment and jupyterlab is provided in /docker.
 ```bash
 cd docker
 nvidia-docker build -t sqm .
