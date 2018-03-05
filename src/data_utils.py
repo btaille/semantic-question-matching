@@ -3,6 +3,8 @@ import pickle
 
 import numpy as np
 import pandas as pd
+
+import nltk
 from nltk import word_tokenize
 from nltk.stem import SnowballStemmer
 
@@ -170,7 +172,11 @@ class QuoraDataset(object):
                 self.q_dict[qid2] = check_str(q2)
 
         print("Tokenizing questions...")
-        self.tok_dict = tokenize_dict(self.q_dict)
+        try:
+            self.tok_dict = tokenize_dict(self.q_dict)
+        except:
+            nltk.download("punkt")
+            self.tok_dict = tokenize_dict(self.q_dict)
 
         if self.w2idx is None:
             self.w2idx, self.idx2w = word_index(self.tok_dict.values())
