@@ -32,8 +32,8 @@ python training.py -m siamese
 ```
 Semi-supervised SDAE-Siamese Network:
 ```bash
-# -r is the size of the labeled seed of question pairs
-python training.py -m hybrid -r 1000
+# -res is the size of the labeled seed of question pairs
+python training.py -m hybrid -res 1000
 ```
 
 ### References
