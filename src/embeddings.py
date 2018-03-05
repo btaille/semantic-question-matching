@@ -13,7 +13,7 @@ def load_embeddings(embeddings_path, binary=False):
     vocab_path = embeddings_path + "_vocab.p"
 
     if not os.path.exists(saving_path):
-        print("Loading word word_embeddings from %s" % embeddings_path)
+        print("Loading word embeddings from %s" % embeddings_path)
         w2v = KeyedVectors.load_word2vec_format(embeddings_path, binary=binary)
 
         weights = w2v.syn0

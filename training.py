@@ -40,7 +40,7 @@ class Config():
             os.makedirs(self.model_path)
         if not os.path.exists(self.glove_filename):
             for file in os.listdir(os.path.dirname(self.glove_filename)):
-                convert_glove(os.join(os.path.dirname(self.glove_filename), file))
+                convert_glove(os.path.join(os.path.dirname(self.glove_filename), file))
 
     # model
     model_name = args.model
