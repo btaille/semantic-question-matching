@@ -59,14 +59,13 @@ class Model(object):
         self.y = tf.placeholder_with_default(tf.zeros([self.config.batch_size], tf.int64), shape=[None],
                                              name="is_duplicate")
 
-        if self.config.model_name == "hybrid":
-            self.q_ae_input = tf.placeholder_with_default(tf.zeros([self.config.batch_size, self.config.padlen], tf.int64),
-                                                          shape=[None, None], name="questionAE")
+        self.q_ae_input = tf.placeholder_with_default(tf.zeros([self.config.batch_size, self.config.padlen], tf.int64),
+                                                      shape=[None, None], name="questionAE")
 
-            self.q_ae_label = tf.placeholder_with_default(tf.zeros([self.config.batch_size, self.config.padlen], tf.int64),
-                                                          shape=[None, None], name="questionAE")
-            self.l_ae = tf.placeholder_with_default(tf.zeros([self.config.batch_size], tf.int64), shape=[None],
-                                                    name="lenAE")
+        self.q_ae_label = tf.placeholder_with_default(tf.zeros([self.config.batch_size, self.config.padlen], tf.int64),
+                                                      shape=[None, None], name="questionAE")
+        self.l_ae = tf.placeholder_with_default(tf.zeros([self.config.batch_size], tf.int64), shape=[None],
+                                                name="lenAE")
 
         self.dropout = tf.placeholder(dtype=tf.float32, shape=[], name="dropout")
         self.lr = tf.placeholder(dtype=tf.float32, shape=[], name="lr")
