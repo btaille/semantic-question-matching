@@ -28,7 +28,7 @@ unzip data.zip -d .
 ./get_glove.sh
 ``` 
 
-This will unzip Quora's dataset and download GloVE.6B.
+This will unzip Quora's dataset and download GloVE.6B.  
 The provided split is the standard partition from [4] in the original Quora format.  
 **None of question id and pair id match the original release from Quora.**
 
