@@ -22,17 +22,15 @@ nvidia-docker run -it -p 8888:8888 -v <absolute_path>/:notebooks/ sqm
 ```
 
 ### Data
-Unzip the content of data/data.zip into data/.  
+```bash
+cd data
+unzip data.zip -d
+./get_glove.sh
+``` 
+
+This will unzip Quora's dataset and download GloVE.6B.
 The provided split is the standard partition from [4] in the original Quora format.  
 **None of question id and pair id match the original release from Quora.**
-
-### Download GloVe
-
-To get GloVE pretrained word embeddings, run (into data/):
-```bash
-./get_data.sh
-```
-This will download GloVE.6B.
 
 ### Training
 Supervised Siamese Network:
