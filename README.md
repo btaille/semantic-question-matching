@@ -16,7 +16,7 @@ The code is written in Python 3 with the following dependencies:
 ### Data
 The provided split is the standard partition from [4] in the original Quora format.
 
-**None of question_ids and ids match the original release from Quora.**
+**None of question id and pair id match the original release from Quora.**
 
 ### Download GloVe
 
